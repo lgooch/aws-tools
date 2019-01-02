@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import boto3
+import argparse
 
 def deleteSubnets(ec2):
     subnets = ec2.describe_subnets()['Subnets']
@@ -27,34 +28,44 @@ def deleteIGWS(ec2, vpcid):
         ec2.detach_internet_gateway(InternetGatewayId=igw['InternetGatewayId'], VpcId=vpcid)
         ec2.delete_internet_gateway(InternetGatewayId=igw['InternetGatewayId'])
 
-# WIP - API doesn't list non associated route tables
-# def deleteRouteTables(ec2):
-#     rtbs = ec2.describe_route_tables()['RouteTables']
-#     for rtb in rtbs:
-#         ec2.delete_route_table(RouteTableId=rtb['RouteTableId'])
-
 def deleteVPC(ec2, vpcid):
     ec2.delete_vpc(VpcId=vpcid)
 
 def main():
-    client = boto3.client('ec2')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--accept', default="n",
+                        help="Auto accept the deletion of the VPC's. Valid values are y or n")
+    parser.add_argument('-p', '--profile',
+                        help="The aws cli profile to use")
+    arg = parser.parse_args()
 
+    session = boto3.Session(profile_name=arg.profile)
+    client = session.client('ec2')
     regions = client.describe_regions()
+    
     for region in regions['Regions']:
-        ec2 = boto3.client('ec2',region_name=region["RegionName"])
+        ec2 = session.client('ec2',region_name=region["RegionName"])
         vpcs = ec2.describe_vpcs()
         for vpc in vpcs["Vpcs"]:
             if vpc["IsDefault"] == True:
-                response = input("Would you like to delete " + vpc["VpcId"] + " in the region " + region["RegionName"] + "? " + "Type y or n (default no): ")
-                if response == "y":
-                    print("Deleting VPC dependencies")
+                if arg.accept == "y":
+                    print("Deleting VPC dependencies for " + vpc["VpcId"] + " in the region " + region["RegionName"])
                     deleteSubnets(ec2)
                     deleteSecurityGroups(ec2)
                     deleteNACLS(ec2)
                     deleteIGWS(ec2,vpc["VpcId"])
-                    #deleteRouteTables(ec2)
-                    print("Deleting VPC")
+                    print("Deleting VPC "  + vpc["VpcId"] + " in the region " + region["RegionName"])
                     deleteVPC(ec2,vpc["VpcId"])
+                elif arg.accept == "n":
+                    response = input("Would you like to delete " + vpc["VpcId"] + " in the region " + region["RegionName"] + "? " + "Type y or n (default no): ")
+                    if response == "y":
+                        print("Deleting VPC dependencies")
+                        deleteSubnets(ec2)
+                        deleteSecurityGroups(ec2)
+                        deleteNACLS(ec2)
+                        deleteIGWS(ec2,vpc["VpcId"])
+                        print("Deleting VPC")
+                        deleteVPC(ec2,vpc["VpcId"])
 
 if __name__ == '__main__':
     main()
