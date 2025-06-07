@@ -9,23 +9,25 @@ From source
 ```
 git clone https://github.com/lgooch/aws-tools
 cd aws-tools
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-python setup.py install
+python3 setup.py install
 ```
 You will also need the AWS CLI to be installed. More information can be found at https://aws.amazon.com/cli/
 
 ## Usage
 To run the script against the default profile configured for the AWS CLI you can run
 ```
-deleteDefaultVPC.py
+delete_default_vpc.py
 ```
 To use a different profile you can use
 ```
-deleteDefaultVPC.py --profile foo
+delete_default_vpc.py --profile foo
 ```
 If you would like to automatically accept the deleting of the VPC's you can run
 ```
-deleteDefaultVPC.py --profile foo --accept y
+delete_default_vpc.py --profile foo --auto-accept
 ```
 
 ## Contributing
