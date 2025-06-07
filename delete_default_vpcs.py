@@ -179,7 +179,8 @@ def main():
                               + vpc["VpcId"] + " in the region "
                               + region["RegionName"])
                     else:
-                        print("Invalid response. Please type y or n.")
+                        print("Invalid response.")
+                        return False
             else:
                 print("Skipping non-default VPC "
                       + vpc["VpcId"] + " in the region "
