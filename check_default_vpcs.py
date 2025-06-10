@@ -8,7 +8,8 @@ import boto3
 
 def check_for_enis(ec2, vpcid):
     """
-    Checks if there are any Elastic Network Interfaces (ENIs) associated with the specified VPC.
+    Checks if there are any Elastic Network Interfaces (ENIs) associated with
+    the specified VPC.
 
     Args:
         ec2 (boto3.client): The Boto3 EC2 client used to interact with AWS EC2 resources.
@@ -48,14 +49,26 @@ def main():
 
     for region in regions:
         ec2 = session.client('ec2', region_name=region["RegionName"])
-        vpcs = ec2.describe_vpcs()
-        for vpc in vpcs["Vpcs"]:
+        vpcs = ec2.describe_vpcs()["Vpcs"]
+
+        if not vpcs:
+            print(f"No VPC's found in region {region['RegionName']}.")
+            continue
+
+        vpc_count = 0
+
+        for vpc in vpcs:
             if vpc["IsDefault"] is True:
                 vpcid = vpc["VpcId"]
                 if check_for_enis(ec2, vpcid):
                     print(f"Default VPC {vpcid} is in use in region {region['RegionName']}.")
                 else:
                     print(f"Default VPC {vpcid} is not in use in region {region['RegionName']}.")
+            else:
+                vpc_count += 1
+                if vpc_count == 1:
+                    print(f"No default VPC found in region {region['RegionName']}")
+
 
 if __name__ == "__main__":
     main()
